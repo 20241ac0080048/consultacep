@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
+    <link rel="stylesheet" href="css/style.css">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src https://viacep.com.br; script-src 'self' 'unsafe-inline';">
     <title>Consulta CEP - ViaCEP</title>
 </head>
@@ -46,7 +46,17 @@
                 .catch(error => {
                     resultadoDiv.innerHTML = `<p style="color: red;">Erro: ${error.message}</p>`;
                 });
-        }
+        
+
+    
+
+        resultadoDiv.innerHTML = `
+    <div class="result-item"><strong>Logradouro</strong> <span>${data.logradouro}</span></div>
+    <div class="result-item"><strong>Bairro</strong> <span>${data.bairro}</span></div>
+    <div class="result-item"><strong>Cidade</strong> <span>${data.localidade} - ${data.uf}</span></div>
+    <div class="result-item"><strong>CEP</strong> <span>${data.cep}</span></div>
+`;
+    }
     </script>
 </body>
 </html>
