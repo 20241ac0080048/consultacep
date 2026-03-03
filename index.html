@@ -4,21 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="css/style.css">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src https://viacep.com.br; script-src 'self' 'unsafe-inline';">
-    <title>Consulta CEP - ViaCEP</title>
+    <title>Consulta Integrada - CEP e CNPJ</title>
 </head>
 <body>
     <div class="container">
+        <!-- SEÇÃO CEP (Sua atividade anterior) -->
         <h1>Consulta CEP - ViaCEP</h1>
         <input type="text" id="cep" placeholder="Digite o CEP (8 dígitos)">
-        <button onclick="buscarCEP()">Buscar</button>
-        <div id="resultado"></div>
+        <button onclick="buscarCEP()">Buscar CEP</button>
+        <div id="resultadoCEP" style="margin-bottom: 40px;"></div>
+
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+
+        <!-- SEÇÃO CNPJ (Nova atividade) -->
+        <h1>Consulta CNPJ - Receita WS</h1>
+        <input type="text" id="cnpj" placeholder="Digite o CNPJ (14 dígitos)">
+        <button onclick="buscarCNPJ()" style="background-color: #28a745;">Buscar CNPJ</button>
+        <div id="resultadoCNPJ"></div>
     </div>
 
     <script>
+        // --- FUNÇÃO BUSCAR CEP (MANTIDA) ---
         function buscarCEP() {
-            const cep = document.getElementById('cep').value.replace(/\D/g, ''); // Limpa pontos e traços
-            const resultadoDiv = document.getElementById('resultado');
+            const cep = document.getElementById('cep').value.replace(/\D/g, '');
+            const resultadoDiv = document.getElementById('resultadoCEP');
 
             if (cep.length !== 8) {
                 resultadoDiv.innerHTML = '<p style="color: red;">Digite um CEP válido com 8 números.</p>';
@@ -28,35 +37,61 @@
             const url = `https://viacep.com.br/ws/${cep}/json/`;
 
             fetch(url)
-                .then(response => {
-                    if (!response.ok) throw new Error('Erro na rede');
-                    return response.json();
-                })
+                .then(response => response.json())
                 .then(data => {
                     if (data.erro) {
                         resultadoDiv.innerHTML = '<p style="color: red;">CEP não encontrado.</p>';
                     } else {
                         resultadoDiv.innerHTML = `
-                            <p><strong>Logradouro:</strong> ${data.logradouro}</p>
-                            <p><strong>Bairro:</strong> ${data.bairro}</p>
-                            <p><strong>Cidade:</strong> ${data.localidade} - ${data.uf}</p>
+                            <div class="result-item"><strong>Logradouro</strong> <span>${data.logradouro}</span></div>
+                            <div class="result-item"><strong>Bairro</strong> <span>${data.bairro}</span></div>
+                            <div class="result-item"><strong>Cidade</strong> <span>${data.localidade} - ${data.uf}</span></div>
+                            <div class="result-item"><strong>CEP</strong> <span>${data.cep}</span></div>
                         `;
                     }
                 })
                 .catch(error => {
                     resultadoDiv.innerHTML = `<p style="color: red;">Erro: ${error.message}</p>`;
                 });
-        
+        }
 
-    
+        // --- FUNÇÃO BUSCAR CNPJ (ADICIONADA) ---
+        function buscarCNPJ() {
+            const cnpj = document.getElementById('cnpj').value.replace(/\D/g, '');
+            const resultadoDiv = document.getElementById('resultadoCNPJ');
 
-        resultadoDiv.innerHTML = `
-    <div class="result-item"><strong>Logradouro</strong> <span>${data.logradouro}</span></div>
-    <div class="result-item"><strong>Bairro</strong> <span>${data.bairro}</span></div>
-    <div class="result-item"><strong>Cidade</strong> <span>${data.localidade} - ${data.uf}</span></div>
-    <div class="result-item"><strong>CEP</strong> <span>${data.cep}</span></div>
-`;
-    }
+            if (cnpj.length !== 14) {
+                resultadoDiv.innerHTML = '<p style="color: red;">Digite um CNPJ válido com 14 números.</p>';
+                return;
+            }
+
+            resultadoDiv.innerHTML = '<p>Consultando...</p>';
+
+            // Endpoint da Receita WS
+            const url = `https://receitaws.com.br/v1/cnpj/${cnpj}`;
+
+            fetch(url)
+                .then(response => {
+                    if (response.status === 429) throw new Error('Limite de 3 consultas por minuto atingido.');
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.status === "ERROR") {
+                        resultadoDiv.innerHTML = `<p style="color: red;">${data.message}</p>`;
+                    } else {
+                        resultadoDiv.innerHTML = `
+                            <div class="result-item"><strong>Razão Social</strong> <span>${data.nome}</span></div>
+                            <div class="result-item"><strong>Situação</strong> <span>${data.situacao}</span></div>
+                            <div class="result-item"><strong>Atividade Principal</strong> <span>${data.atividade_principal[0].text}</span></div>
+                            <div class="result-item"><strong>Logradouro</strong> <span>${data.logradouro}, ${data.numero}</span></div>
+                            <div class="result-item"><strong>Município</strong> <span>${data.municipio} - ${data.uf}</span></div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    resultadoDiv.innerHTML = `<p style="color: red;">Erro: ${error.message}</p>`;
+                });
+        }
     </script>
 </body>
 </html>
